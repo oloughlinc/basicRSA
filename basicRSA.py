@@ -19,7 +19,8 @@ class RSA:
         self.d = 0  # PRIVATE KEY VALUE
         self.PRIVATE_KEY = (self.n, self.d)
 
-        self.c = b''  # CYPHERTEXT
+        self.c = b''  # CYPHERTEXT STORAGE
+        self.m = b''  # DECRYPTED STORAGE
 
     # -----------------------INTERNAL KEY GENERATION ALGORITHMS -------------------------------------------
 
@@ -84,7 +85,7 @@ class RSA:
 
     def _os2ip(self, X) -> int:
         #Reference RFC 8017 PKCS#1 v2.2 (4.2) (Convert a string into an integer representation)
-        return int.from_bytes((X.encode('utf-8')), 'big')
+        return int.from_bytes(X, 'big')
 
     def _i2osp(self, x) -> bytes:
         #Reference RFC 8017 PKCS#1 v2.2 (4.1) (Convert an integer into a representation of its bytes)
@@ -96,6 +97,8 @@ class RSA:
             return directBase64.bytes_to_b64(bytestring)
         if display_as == 'hex':
             return hex(int.from_bytes(bytestring, 'big'))[2:]
+        if display_as == 'ascii' or display_as == 'utf':
+            return bytes.decode(bytestring, 'utf-8')
 
     # -------------------------end internal encoding algorithms --------------------------------------------------
 
@@ -135,8 +138,9 @@ class RSA:
         Reference PKCS#1 v2.2 (7.1.1 [3])'''
 
         if self.n == 0 or self.e == 0:
-            print ('There is no public key (N, e) available in memory for encryption.')
+            print ('There is no public key (n, e) available in memory for encryption.')
 
+        M = M.encode('utf-8')
         message_as_int = self._os2ip(M) # 1: convert message to a numeric representation
 
         if message_as_int >= self.n:
@@ -152,8 +156,31 @@ class RSA:
             return self._display_byte_string(encrypted_msg)
             
             
-    def decrypt(self, encrypted_msg):
+    def decrypt(self, c, output_as_string=True) -> str:
+        '''Decrypt a message using the private key currently stored in this module.
+        If input c is a string, it must be a base64 encoded string. Alternatively, you can pass a bytes object.
+        Output is a decrypted string in plaintext'''
         
-        return primecheck.a_exp_b_mod_c(encrypted_msg, self.d, self.n)
+        if self.n == 0 or self.d == 0:
+            print ('There is no private key (n, d) available in memory for decryption.')
+
+        if isinstance(c, str):
+            c = directBase64.b64_to_bytes(c)
+        
+        encrypted_msg_as_int = self._os2ip(c)
+
+        if encrypted_msg_as_int >= self.n:
+            print('Message is too large for decryption (encoding produced too many bytes).')
+
+        decrypted_msg_int = primecheck.a_exp_b_mod_c(encrypted_msg_as_int, self.d, self.n)
+        self.m = self._i2osp(decrypted_msg_int)
+
+        if output_as_string:
+            return self._display_byte_string(self.m, 'ascii')
+
+
+
+
+
     
 
