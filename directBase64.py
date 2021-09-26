@@ -62,14 +62,12 @@ def b64_to_bytes(m) -> bytes:
 
     output = bytearray(b'')
     padding_found = 0
-    pad_char_reached = False
 
-
+    encoded_value = 0
     for i in range(0, len(m), 4): 
         char_partition = m[i : i + 4] # Split input string 4 characters at a time
 
-        encoded_value = 0
-
+        
         if len(char_partition) == 4:
 
             for char in char_partition:
@@ -78,33 +76,28 @@ def b64_to_bytes(m) -> bytes:
 
                 if char == pad:
                     padding_found += 1
-                    pad_char_reached = True # reaching pad character breaks the top loop at the end of the function
                     continue
 
                 encoded_value += base64_encoding_list.index(char) # add the characters encoding to the register
 
-            # ----------------------------------------------------------------------------------------------------------------------------
-
-            bytes_in_reverse = []
-            while encoded_value > 0:
+     # ----------------------------------------------------------------------------------------------------------------------------
+    bytes_in_reverse = []
+    while encoded_value > 0:
                 
-                next_byte = encoded_value & 255 # 8 bit mask
-                bytes_in_reverse.append(next_byte)
-                encoded_value >>= 8
+        next_byte = encoded_value & 255 # 8 bit mask
+        bytes_in_reverse.append(next_byte)
+        encoded_value >>= 8
             
-            for number_of_times in range(padding_found):
-                try:
-                    del(bytes_in_reverse[0]) # remove end bytes from the array equivalent to the amount of padding
-                except IndexError:
-                    break # allows for cases where there are more padding characters than encoded characters in any partition. This should never actually happen.
+    for number_of_times in range(padding_found):
+        try:
+            del(bytes_in_reverse[0]) # remove end bytes from the array equivalent to the amount of padding
+        except IndexError:
+            break # allows for cases where there are more padding characters than encoded characters in any partition. This should never actually happen.
                             # if it does though, it won't effect encoded output because that means entire partition is bad and would need to be
                             # deleted anyway.
             
-            for byte in reversed(bytes_in_reverse):
+    for byte in reversed(bytes_in_reverse):
                 output.append(byte)
-        
-        if pad_char_reached:
-            break
 
     return bytes(output)
 

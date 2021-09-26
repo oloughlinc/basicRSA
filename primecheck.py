@@ -1,3 +1,6 @@
+'''A collection of math functions necessary for RSA encryption, created along with the Basic RSA class
+as a member of the exercise.'''
+
 import random
 import secrets
 import math
@@ -17,15 +20,16 @@ def isPrime_Fermat(num, k=20):
 
     '''Checks a given input for primality via Fermat's Little Theorem.
         Returns True if the number is a probable prime.
-        Returns False if the number is composite
+        Returns False if the number is composite or < 1.
 
         k is the number of times to perform the check. Higher numbers reduce the chance
         of a false positive, lower numbers are faster.
     '''
-    #TODO: check that num is an int
-    
+
     # Check basic cases first
-    if (num < 1) or (num % 2 == 0):
+    if not _valid_input(1, num):
+        return False   
+    if num % 2 == 0:
         return False
 
     # begin Fermat primality algorithm
@@ -50,8 +54,8 @@ def a_exp_b_mod_c(a, b, c):
     # check for valid inputs
     if not _valid_input(1, a, b, c):
         return 0
-        #TODO error printing??
 
+    # begin algorithm    
     result = 1
     while b > 0:
 
@@ -71,7 +75,7 @@ def get_prime(bits):
     """Generate a prime number of binary bit length 'bits'. Result is a
     probable prime number as verified by a Fermat primality test."""
 
-    if bits < 2:
+    if not _valid_input(2, bits):
         return None
 
     min_bits = 1 << bits - 1
@@ -85,6 +89,9 @@ def get_prime(bits):
 def get_relative_prime(N, max_bits=50):
     """Generate a new random number relatively prime to integer N. Define a maximum size in bits using max_bits"""
 
+    if not _valid_input(1, N, max_bits):
+        return 0
+
     candidate_prime = secrets.randbits(max_bits)
     while math.gcd(candidate_prime, N) != 1:
         candidate_prime = secrets.randbits(max_bits)
@@ -94,7 +101,7 @@ def get_relative_prime(N, max_bits=50):
 def get_euclidean_sequence(a, b):
     """Returns the Euclidean Algorithm sequence in a list for two given integers a and b"""
 
-    if a < 0 or b < 0:
+    if not _valid_input(0, a, b):
         return 0
 
     euclidean_seq = []
@@ -110,9 +117,9 @@ def get_euclidean_sequence(a, b):
 def modular_inverse(a, b):
     """Iterative function to calculate the inverse of integer a mod integer b"""
 
-    if a < 0 or b < 0:
+    if not _valid_input(0, a, b):
         return 0
-        
+       
     # receive the euclidean sequence and remove the last value as it is not needed for this algorithm.
     euclidean_seq = get_euclidean_sequence(b, a)
     euclidean_seq.pop()
@@ -147,12 +154,6 @@ def int_to_hex(n):
     output.reverse()
     return ''.join(output)
 
-
-
-if __name__ == '__main__':
-    
-    input('start')
-    print(a_exp_b_mod_c(5, 11, 23567))
     
 
 

@@ -102,6 +102,161 @@ class RSA:
 
     # -------------------------end internal encoding algorithms --------------------------------------------------
 
+    def write_private_key(self):
+
+        with open('private.key', 'w') as private_key_file:
+
+            private_key_file.write(('-' * 10) + 'BEGIN RSA PRIVATE KEY' + ('-' * 10))
+            private_key_file.write('\n')
+
+            private_key = self._i2osp(self.n) # converting int to bytes object
+            private_key_file.write(self._display_byte_string(private_key))
+            private_key_file.write('\n')
+
+            private_key = self._i2osp(self.d)
+            private_key_file.write(self._display_byte_string(private_key))
+            private_key_file.write('\n')
+
+            private_key_file.write(('-' * 10) + 'END RSA PRIVATE KEY' + ('-' * 10))
+            private_key_file.write('\n')
+
+    def write_public_key(self):
+
+        with open('key.pub', 'w') as public_key_file:
+
+            public_key_file.write(('-' * 10) + 'BEGIN RSA PUBLIC KEY' + ('-' * 10))
+            public_key_file.write('\n')
+
+            public_key = self._i2osp(self.n) # converting int to bytes object
+            public_key_file.write(self._display_byte_string(public_key))
+            public_key_file.write('\n')
+
+            public_key = self._i2osp(self.e)
+            public_key_file.write(self._display_byte_string(public_key))
+            public_key_file.write('\n')
+
+            public_key_file.write(('-' * 10) + 'END RSA PUBLIC KEY' + ('-' * 10))
+            public_key_file.write('\n')
+
+    def write_encrypted_message(self):
+
+        with open('encrypted_message.txt', 'w') as output_file:
+            
+            output_file.write(('-' * 10) + 'BEGIN RSA ENCRYPTED MESSAGE' + ('-' * 10))
+            output_file.write('\n')
+
+            output_file.write(self._display_byte_string(self.c))
+            output_file.write('\n')
+
+            output_file.write(('-' * 10) + 'END RSA ENCRYPTED MESSAGE' + ('-' * 10))
+            output_file.write('\n')
+
+    def load_private_key_From_file(self):
+
+        with open('private.key', 'r') as private_key_file:
+
+            raw_content = private_key_file.readlines()
+            empty = []
+
+            if raw_content == empty:
+
+                print('No private key found to load from file. Private keys are stored in private.key and are base64 encoded.')
+                return
+
+            # Remove newlines from content
+            content = [token.rstrip('\n') for token in raw_content]
+
+            # Check that first line of file is correct
+            if content[0] != ('-' * 10) + 'BEGIN RSA PRIVATE KEY' + ('-' * 10): 
+                print('Invalid key file format.')
+                return
+            
+            # Check that last line of file is correct
+            if content[3] != ('-' * 10) + 'END RSA PRIVATE KEY' + ('-' * 10):
+                print('Invalid key file format.')
+                return
+            
+            raw_key_n = content[1]
+            raw_key_d = content[2]
+
+            bytes_key_n = directBase64.b64_to_bytes(raw_key_n)
+            bytes_key_d = directBase64.b64_to_bytes(raw_key_d)
+
+            self.n = int.from_bytes(bytes_key_n, 'big')
+            self.d = int.from_bytes(bytes_key_d, 'big')
+
+        print('Private key file loaded successfully')
+
+    def load_public_key_From_file(self):
+
+        with open('key.pub', 'r') as public_key_file:
+
+            raw_content = public_key_file.readlines()
+            empty = []
+
+            if raw_content == empty:
+
+                print('No private key found to load from file. Private keys are stored in private.key and are base64 encoded.')
+                return
+
+            # Remove newlines from content
+            content = [token.rstrip('\n') for token in raw_content]
+
+            # Check that first line of file is correct
+            if content[0] != ('-' * 10) + 'BEGIN RSA PUBLIC KEY' + ('-' * 10): 
+                print('Invalid key file format.')
+                return
+            
+            # Check that last line of file is correct
+            if content[3] != ('-' * 10) + 'END RSA PUBLIC KEY' + ('-' * 10):
+                print('Invalid key file format.')
+                return
+            
+            raw_key_n = content[1]
+            raw_key_e = content[2]
+
+            bytes_key_n = directBase64.b64_to_bytes(raw_key_n)
+            bytes_key_e = directBase64.b64_to_bytes(raw_key_e)
+
+            self.n = int.from_bytes(bytes_key_n, 'big')
+            self.e = int.from_bytes(bytes_key_e, 'big')
+
+            self.n_bytes = 1024 # TODO this is a hack load the byte size of the key n instead
+        
+        print("Public key file loaded successfully.")
+
+    def load_encrypted_message_from_file(self, filename='encrypted_message.txt'):
+
+        with open(filename, 'r') as encrypted_msg:
+
+            raw_content = encrypted_msg.readlines()
+
+            empty = []
+            if raw_content == empty:
+
+                print('No private key found to load from file. Private keys are stored in private.key and are base64 encoded.')
+                return
+
+            # Remove newlines from content
+            content = [token.rstrip('\n') for token in raw_content]
+
+            # Check that first line of file is correct
+            if content[0] != ('-' * 10) + 'BEGIN RSA ENCRYPTED MESSAGE' + ('-' * 10): 
+                print('Invalid key file format.')
+                return
+            
+            # Check that last line of file is correct
+            if content[2] != ('-' * 10) + 'END RSA ENCRYPTED MESSAGE' + ('-' * 10):
+                print('Invalid key file format.')
+                return
+
+            raw_cyphertext = content[1]
+
+            self.c = directBase64.b64_to_bytes(raw_cyphertext)
+
+        print('Encrypted message loaded from file successfully')
+
+
                 
     def new_random_keys(self, bits=1024, default_e=True):
         """Generates new random n (bits = size of N, default is 1024) and new public key (n, e) along with new private key (n, d).
@@ -156,9 +311,10 @@ class RSA:
             return self._display_byte_string(encrypted_msg)
             
             
-    def decrypt(self, c, output_as_string=True) -> str:
+    def decrypt(self, c = b'', output_as_string=True) -> str:
         '''Decrypt a message using the private key currently stored in this module.
         If input c is a string, it must be a base64 encoded string. Alternatively, you can pass a bytes object.
+        If no input is given, the encrypted message currently stored in memory is used.
         Output is a decrypted string in plaintext'''
         
         if self.n == 0 or self.d == 0:
@@ -166,6 +322,10 @@ class RSA:
 
         if isinstance(c, str):
             c = directBase64.b64_to_bytes(c)
+
+        #if the c parameter is empty, instead use c stored in memory
+        if c == b'':
+            c = self.c
         
         encrypted_msg_as_int = self._os2ip(c)
 
