@@ -6,7 +6,7 @@ implement something that first and foremost works and that was built by myself. 
 either standard libraries exist or open libraries can be imported.
 
 The RSA class handles public and private key generation in 1024, 2048, or 4096 bit integer n modulus. Its handles encoding and encryption of a given string in
-one function .encrypt(M) and decryption using .decrypt(). Output can keys can be written to a file.
+one function .encrypt(M) and decryption using .decrypt(). Output and keys can be written to a file.
 
 <b>Some design choices:</b>
 
